@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { LocationResults } from './components/LocationResults';
 import { SearchForm } from './components/SearchForm';
 import { StatusMessage } from './components/StatusMessage';
-import { LocationResults } from './components/LocationResults';
-import { WeatherPanel } from './components/WeatherPanel';
 import { UnitToggle } from './components/UnitToggle';
+import { WeatherPanel } from './components/WeatherPanel';
 import { useWeatherApp } from './hooks/useWeatherApp';
 import { fetchForecast } from './services/forecastService';
 import { searchLocations } from './services/geocodingService';
@@ -27,6 +27,8 @@ export default function App() {
       setSelectedCity(null);
       return;
     }
+
+    void submitSearch(nextValue);
 
     const results = await searchLocations(nextValue);
     setCities(results);
@@ -60,7 +62,11 @@ export default function App() {
     }
 
     if (state.kind === 'error') {
-      return { kind: 'error' as const, message: state.error.message, retryable: state.error.retryable };
+      return {
+        kind: 'error' as const,
+        message: state.error.message,
+        retryable: state.error.retryable,
+      };
     }
 
     return null;
@@ -95,13 +101,9 @@ export default function App() {
           <LocationResults cities={cities} onSelect={handleSelectCity} />
         )}
 
-        {isLoadingForecast && (
-          <StatusMessage kind="loading" message="Carregando clima..." />
-        )}
+        {isLoadingForecast && <StatusMessage kind="loading" message="Carregando clima..." />}
 
-        {weatherData && (
-          <WeatherPanel data={{ ...weatherData, unit }} unit={unit} />
-        )}
+        {weatherData && <WeatherPanel data={{ ...weatherData, unit }} unit={unit} />}
       </div>
     </main>
   );
