@@ -1,8 +1,15 @@
-import type { WeatherData, City } from '../types/weather';
 import type { ForecastApiResponse } from '../types/api';
-import { describeWeatherCode } from '../utils/weatherCodes';
+import type { City, WeatherData } from '../types/weather';
 import { normalizeForecast } from '../utils/forecast';
+import { describeWeatherCode } from '../utils/weatherCodes';
 import { fetchJson } from './http';
+import { createRequestId, recordTelemetry } from './telemetry';
+
+const invalidResponseError = {
+  code: 'invalid-response',
+  message: 'Não foi possível consultar o serviço.',
+  retryable: true,
+} as const;
 
 export async function fetchForecast(city: City, signal?: AbortSignal): Promise<WeatherData> {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -13,22 +20,40 @@ export async function fetchForecast(city: City, signal?: AbortSignal): Promise<W
   url.searchParams.set('forecast_days', '5');
   url.searchParams.set('timezone', 'auto');
 
-  const payload = await fetchJson<ForecastApiResponse>(url.toString(), { signal, timeoutMs: 8000 });
+  const payload = await fetchJson<ForecastApiResponse>(url.toString(), {
+    signal,
+    timeoutMs: 8000,
+    operation: 'forecast',
+  });
 
-  if (!payload.current || typeof payload.current.temperature_2m !== 'number' || typeof payload.current.weather_code !== 'number') {
-    throw {
-      code: 'invalid-response',
-      message: 'Não foi possível consultar o serviço.',
-      retryable: true,
-    };
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !payload.current ||
+    typeof payload.current.temperature_2m !== 'number' ||
+    !Number.isFinite(payload.current.temperature_2m) ||
+    typeof payload.current.weather_code !== 'number' ||
+    !Number.isFinite(payload.current.weather_code) ||
+    typeof payload.timezone !== 'string' ||
+    payload.timezone !== city.timezone
+  ) {
+    recordTelemetry({
+      category: 'invalid-response',
+      operation: 'forecast',
+      timestamp: new Date().toISOString(),
+      requestId: createRequestId(),
+    });
+    throw invalidResponseError;
   }
 
-  if (!payload.daily) {
-    throw {
-      code: 'invalid-response',
-      message: 'Não foi possível consultar o serviço.',
-      retryable: true,
-    };
+  if (!payload.daily || typeof payload.daily !== 'object') {
+    recordTelemetry({
+      category: 'invalid-response',
+      operation: 'forecast',
+      timestamp: new Date().toISOString(),
+      requestId: createRequestId(),
+    });
+    throw invalidResponseError;
   }
 
   const forecast = normalizeForecast(payload.daily, city.timezone);

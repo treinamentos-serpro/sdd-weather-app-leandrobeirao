@@ -18,6 +18,7 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [cities, setCities] = useState<City[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const searchOperationRef = useRef(0);
   const resultsRef = useRef<HTMLDivElement>(null);
   const weatherRef = useRef<HTMLDivElement>(null);
 
@@ -25,21 +26,27 @@ export default function App() {
   const isLoadingSearch = state.kind === 'loading' && state.operation === 'search';
   const isLoadingForecast = state.kind === 'loading' && state.operation === 'forecast';
   const isLoading = isLoadingSearch || isLoadingForecast;
+  const searchIsIdentical = isLoadingSearch && state.query === query.trim();
 
   const handleSubmit = useCallback(
     async (value: string) => {
       const nextValue = value.trim();
+      const searchOperationId = searchOperationRef.current + 1;
+      searchOperationRef.current = searchOperationId;
       setQuery(nextValue);
+      setCities([]);
+      setSelectedCity(null);
 
       if (!nextValue) {
-        setCities([]);
-        setSelectedCity(null);
+        await submitSearch(nextValue);
         return;
       }
 
       const results = await submitSearch(nextValue);
+      if (searchOperationRef.current !== searchOperationId) {
+        return;
+      }
       setCities(results);
-      setSelectedCity(null);
       if (results.length > 0) {
         setQuery(nextValue);
       }
@@ -114,7 +121,7 @@ export default function App() {
             value={query}
             onChange={setQuery}
             onSubmit={handleSubmit}
-            disabled={isLoading}
+            disabled={searchIsIdentical}
           />
 
           <UnitToggle unit={unit} onChange={toggleUnit} />

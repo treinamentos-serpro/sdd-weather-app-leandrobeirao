@@ -1,4 +1,5 @@
 import type { AppError } from '../types/weather';
+import { createRequestId, recordTelemetry, type TelemetryCategory } from './telemetry';
 
 export type HttpError = AppError & { cause?: unknown };
 
@@ -13,9 +14,10 @@ export function isTimeoutError(error: unknown): boolean {
 
 export async function fetchJson<T>(
   input: RequestInfo | URL,
-  init: RequestInit & { timeoutMs?: number } = {},
+  init: RequestInit & { timeoutMs?: number; operation?: 'geocoding' | 'forecast' } = {},
 ): Promise<T> {
-  const { timeoutMs = 8000, signal, ...rest } = init;
+  const { timeoutMs = 8000, signal, operation = 'geocoding', ...rest } = init;
+  const requestId = createRequestId();
   const controller = new AbortController();
 
   if (signal) {
@@ -62,15 +64,35 @@ export async function fetchJson<T>(
       } satisfies AppError;
     }
 
-    return (await response.json()) as T;
+    try {
+      return (await response.json()) as T;
+    } catch {
+      throw {
+        code: 'invalid-response',
+        message: 'Não foi possível consultar o serviço.',
+        retryable: true,
+      } satisfies AppError;
+    }
   } catch (error) {
     const candidate = error as { code?: string; name?: string; message?: string };
 
     if (signal?.aborted) {
+      recordTelemetry({
+        category: 'operation',
+        operation,
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
       throw error;
     }
 
     if (candidate.name === 'AbortError' || timedOut) {
+      recordTelemetry({
+        category: 'timeout',
+        operation,
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
       throw {
         code: 'timeout',
         message: 'A consulta demorou mais que o esperado.',
@@ -78,7 +100,18 @@ export async function fetchJson<T>(
       } satisfies AppError;
     }
 
-    if (candidate.code === 'rate-limit' || candidate.code === 'service-unavailable') {
+    if (
+      candidate.code === 'rate-limit' ||
+      candidate.code === 'service-unavailable' ||
+      candidate.code === 'invalid-response'
+    ) {
+      const category: TelemetryCategory =
+        candidate.code === 'rate-limit'
+          ? 'rate-limit'
+          : candidate.code === 'invalid-response'
+            ? 'invalid-response'
+            : 'network';
+      recordTelemetry({ category, operation, timestamp: new Date().toISOString(), requestId });
       throw {
         code: candidate.code,
         message: candidate.message ?? 'Não foi possível consultar o serviço.',
@@ -86,6 +119,12 @@ export async function fetchJson<T>(
       } satisfies AppError;
     }
 
+    recordTelemetry({
+      category: 'network',
+      operation,
+      timestamp: new Date().toISOString(),
+      requestId,
+    });
     throw {
       code: 'service-unavailable',
       message: 'Não foi possível consultar o serviço.',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchForecast } from '../services/forecastService';
 import { searchLocations } from '../services/geocodingService';
 import type { AppError, City, Unit, WeatherData } from '../types/weather';
@@ -24,6 +24,19 @@ export type WeatherAppState =
 export function useWeatherApp() {
   const [unit, setUnit] = useState<Unit>('celsius');
   const [state, setState] = useState<WeatherAppState>({ kind: 'idle', query: '' });
+  const operationRef = useRef(0);
+  const controllerRef = useRef<AbortController | null>(null);
+
+  const beginOperation = () => {
+    controllerRef.current?.abort();
+    const operationId = operationRef.current + 1;
+    operationRef.current = operationId;
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    return { operationId, controller };
+  };
+
+  const isCurrentOperation = (operationId: number) => operationRef.current === operationId;
 
   const toggleUnit = () => {
     setUnit((current) => (current === 'celsius' ? 'fahrenheit' : 'celsius'));
@@ -33,6 +46,7 @@ export function useWeatherApp() {
     const validation = validateCityQuery(query);
 
     if (!validation.ok) {
+      beginOperation();
       setState({
         kind: 'error',
         error: {
@@ -48,15 +62,19 @@ export function useWeatherApp() {
       return [];
     }
 
+    const { operationId, controller } = beginOperation();
     setState({
       kind: 'loading',
       operation: 'search',
       query: validation.value,
-      operationId: Date.now(),
+      operationId,
     });
 
     try {
-      const results = await searchLocations(validation.value);
+      const results = await searchLocations(validation.value, controller.signal);
+      if (!isCurrentOperation(operationId)) {
+        return [];
+      }
       if (results.length === 0) {
         setState({ kind: 'empty', query: validation.value });
         return results;
@@ -68,6 +86,9 @@ export function useWeatherApp() {
       });
       return results;
     } catch (error) {
+      if (!isCurrentOperation(operationId) || controller.signal.aborted) {
+        return [];
+      }
       const appError = error as AppError;
       setState({
         kind: 'error',
@@ -86,19 +107,26 @@ export function useWeatherApp() {
   };
 
   const fetchForecastForCity = async (city: City) => {
+    const { operationId, controller } = beginOperation();
     setState({
       kind: 'loading',
       operation: 'forecast',
       query: city.name,
-      operationId: Date.now(),
+      operationId,
       location: city,
     });
 
     try {
-      const data = await fetchForecast(city);
+      const data = await fetchForecast(city, controller.signal);
+      if (!isCurrentOperation(operationId)) {
+        return null;
+      }
       setState({ kind: 'success', data });
       return data;
     } catch (error) {
+      if (!isCurrentOperation(operationId) || controller.signal.aborted) {
+        return null;
+      }
       const appError = error as Partial<AppError>;
       setState({
         kind: 'error',
@@ -115,6 +143,8 @@ export function useWeatherApp() {
       return null;
     }
   };
+
+  useEffect(() => () => controllerRef.current?.abort(), []);
 
   return {
     state,

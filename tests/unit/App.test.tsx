@@ -112,4 +112,53 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     await waitFor(() => expect(screen.getByText('25°C')).toBeInTheDocument());
   });
+
+  it('keeps only the most recent search while an earlier one is pending', async () => {
+    let resolveFirst: ((response: Response) => void) | undefined;
+    const firstResponse = new Promise<Response>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(firstResponse)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            { id: 2, name: 'Lisboa', latitude: 38.7, longitude: -9.1, timezone: 'Europe/Lisbon' },
+          ],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'São Paulo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'Lisboa' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Lisboa/i })).toBeInTheDocument(),
+    );
+    resolveFirst?.({
+      ok: true,
+      json: async () => ({
+        results: [
+          {
+            id: 1,
+            name: 'São Paulo',
+            latitude: -23.5,
+            longitude: -46.6,
+            timezone: 'America/Sao_Paulo',
+          },
+        ],
+      }),
+    } as Response);
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /São Paulo/i })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: /Lisboa/i })).toBeInTheDocument();
+  });
 });

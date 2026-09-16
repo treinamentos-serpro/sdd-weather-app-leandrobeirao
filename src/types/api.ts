@@ -1,36 +1,36 @@
 export interface GeocodingResult {
-  id?: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  timezone: string;
-  admin1?: string;
-  country?: string;
-  country_code?: string;
+  id?: unknown;
+  name?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
+  timezone?: unknown;
+  admin1?: unknown;
+  country?: unknown;
+  country_code?: unknown;
 }
 
 export interface GeocodingApiResponse {
-  results?: GeocodingResult[];
-  generationtime_ms?: number;
+  results?: unknown;
+  generationtime_ms?: unknown;
 }
 
 export interface ForecastCurrentApi {
-  time?: string;
-  temperature_2m?: number;
-  weather_code?: number;
+  time?: unknown;
+  temperature_2m?: unknown;
+  weather_code?: unknown;
 }
 
 export interface ApiDailyData {
-  time?: string[];
-  temperature_2m_min?: number[];
-  temperature_2m_max?: number[];
-  weather_code?: number[];
+  time?: unknown;
+  temperature_2m_min?: unknown;
+  temperature_2m_max?: unknown;
+  weather_code?: unknown;
 }
 
 export interface ForecastApiResponse {
-  latitude?: number;
-  longitude?: number;
-  timezone?: string;
+  latitude?: unknown;
+  longitude?: unknown;
+  timezone?: unknown;
   current?: ForecastCurrentApi;
   daily?: ApiDailyData;
 }
