@@ -120,6 +120,17 @@ No entanto, o briefing ainda deixa diversas decisões críticas sem definição.
 - Falhas de rede: conexão instável pode resultar em dados ausentes ou frustração no uso.
 - Qualidade da informação: previsões incompletas ou pouco confiáveis podem diminuir a credibilidade do produto.
 
+## Mitigações de Risco
+
+| Risco | Probabilidade | Impacto | Mitigação |
+| --- | --- | --- | --- |
+| Dependência de API externa | Média | Alto | Usar uma API pública e estável, tratar falhas com estados de erro claros, limitar chamadas redundantes e aplicar cache leve para reduzir instabilidade. |
+| Busca ambígua | Alta | Médio | Exibir sugestões com cidade, estado e país; permitir seleção manual quando houver múltiplos resultados. |
+| Conversão incorreta entre Celsius e Fahrenheit | Baixa | Alto | Centralizar a conversão em uma função pura, validada por testes unitários, e aplicar a mesma regra em toda a UI. |
+| Experiência ruim em mobile | Média | Alto | Otimizar para mobile-first, testar em diferentes tamanhos de tela e validar legibilidade, espaçamento e interação. |
+| Falhas de rede | Média | Médio | Exibir mensagem de erro útil, permitir tentativa de recarregamento e manter a interface funcional mesmo sem dados atualizados. |
+| Qualidade da informação | Média | Alto | Validar campos essenciais, tratar dados ausentes com fallback e monitorar inconsistências de resposta da API. |
+
 ## Perguntas em Aberto
 
 1. Quem é o público-alvo principal da aplicação?
@@ -142,6 +153,45 @@ No entanto, o briefing ainda deixa diversas decisões críticas sem definição.
 18. Quais critérios de qualidade e testes devem ser atendidos antes do lançamento?
 19. Quais métricas de performance são aceitáveis para carregamento e busca?
 20. Quais exigências de segurança e privacidade devem ser observadas?
+
+## Personas
+
+### 1. Viajante em trânsito
+- Objetivo principal: consultar o clima de uma cidade destino antes de viajar, sair do hotel ou planejar atividades fora.
+- Contexto de uso: mobile, em deslocamento, busca rápida e pouca leitura.
+- Métrica de sucesso: encontrar a previsão relevante em menos de 10 segundos e decidir sobre roupa, transporte ou agenda com pouca fricção.
+
+### 2. Usuário cotidiano
+- Objetivo principal: verificar se precisa usar guarda-chuva, escolher roupa ou planejar a rotina do dia.
+- Contexto de uso: mobile e desktop, uso frequente e diário.
+- Métrica de sucesso: consultar o clima atual e a previsão de 5 dias sem esforço, entendendo a informação em menos de 1 minuto.
+
+### 3. Planejador de agenda / profissional
+- Objetivo principal: comparar o clima de diferentes localidades ou validar tendências para eventos, visitas ou deslocamentos.
+- Contexto de uso: desktop, consultas mais deliberadas e comparativas.
+- Métrica de sucesso: visualizar a previsão de forma clara e confiável, alternando unidades sem perder contexto e tomando decisão com base na informação.
+
+## Decisões
+
+- Fonte de dados: Open-Meteo (sem API key).
+  - Justificativa: atende à necessidade de um serviço meteorológico público, gratuito e simples de integrar, sem custo operacional de autenticação.
+  - Resolve: define a base de dados para o produto e elimina a incerteza sobre a origem das previsões e a necessidade de chave de acesso.
+
+- "5 dias" = hoje + 4 dias seguintes.
+  - Justificativa: mantém o escopo claro e previsível para UX e testes, sem ampliar a complexidade da previsão para um período maior.
+  - Resolve: responde à ambiguidade sobre a contagem do período de 5 dias e reduz risco de inconsistência de layout e interpretação.
+
+- Unidade padrão: Celsius.
+  - Justificativa: Celsius é mais comum para o público brasileiro e reduz atrito para usuários que esperam a temperatura em escala local.
+  - Resolve: define a experiência inicial da aplicação e elimina a pergunta sobre a unidade padrão ao abrir o app.
+
+- Sem autenticação e sem persistência de servidor.
+  - Justificativa: a primeira versão é uma consulta rápida e individual, sem necessidade de identificação do usuário ou armazenamento em backend.
+  - Resolve: elimina dúvidas sobre login, dados do usuário e persistência de histórico/contas, mantendo o escopo enxuto e viável.
+
+- Idioma da UI: pt-BR.
+  - Justificativa: a aplicação será usada principalmente no contexto brasileiro, e a linguagem local melhora legibilidade e compreensão imediata.
+  - Resolve: define a experiência de uso e responde à incerteza sobre idioma da interface.
 
 ## Suposições
 
