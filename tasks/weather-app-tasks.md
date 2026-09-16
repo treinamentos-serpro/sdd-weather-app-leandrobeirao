@@ -55,6 +55,10 @@ Tamanho relativo: `P` é pequeno (até meio dia), `M` é médio (até dois dias)
 | T-14 | P0 | M | Exibição do valor principal da aplicação. |
 | T-15 | P0 | P | Controle de unidade visível e acessível. |
 | T-16 | P0 | G | Integra todas as camadas em `App`. |
+| T-29 | P0 | P | Assets locais eliminam dependência externa para imagens climáticas. |
+| T-30 | P0 | P | Mapeamento WMO visual puro mantém UI e domínio consistentes. |
+| T-31 | P0 | P | Componente de imagem garante acessibilidade e layout estável. |
+| T-32 | P0 | M | Aplicação dos cartões, divisores e hierarquia na experiência visível. |
 | T-17 | P1 | P | Regressão da validação de entrada. |
 | T-18 | P1 | M | Casos de timezone e previsão parcial. |
 | T-19 | P1 | M | Cobertura de rede, timeout e geocoding com mocks. |
@@ -64,6 +68,7 @@ Tamanho relativo: `P` é pequeno (até meio dia), `M` é médio (até dois dias)
 | T-23 | P1 | M | Seleção e renderização da previsão. |
 | T-27 | P1 | P | Conversões, arredondamento e códigos WMO. |
 | T-28 | P1 | P | Interação acessível do controle de unidade. |
+| T-33 | P1 | M | Regressão de assets, acessibilidade visual e screenshots responsivos. |
 | T-24 | P1 | M | Fluxo principal integrado em navegador e mobile. |
 | T-25 | P1 | M | Recuperação de vazio, erro, retry e concorrência no navegador. |
 | T-26 | P0 | G | Gate final de lint, build, testes e release. |
@@ -301,7 +306,64 @@ Tamanho relativo: `P` é pequeno (até meio dia), `M` é médio (até dois dias)
 - Tipo: Infra
 - Rastreabilidade: RF1, RF2, RF3, RF4, RF5, RF6, RF7, RF8, RF9 e RF10.
 
-## Entrega 7 — Testes focados
+## Entrega 7 — Direção visual meteorológica
+
+### T-29 — Adicionar assets meteorológicos locais
+- ID: T-29
+- Título: Disponibilizar ilustrações locais para condições meteorológicas
+- Descrição curta: Adicionar os assets raster locais definidos no plano, organizados por grupo WMO e com fallback de condição indisponível.
+- Critérios de aceite:
+  - Existem assets locais para céu limpo, parcialmente nublado, nevoeiro, garoa, chuva, neve, pancadas de chuva, pancadas de neve, tempestade e indisponibilidade.
+  - Os assets não dependem de URL remota nem de dados da cidade consultada.
+  - O formato e o tamanho dos arquivos são adequados à web e não introduzem dependência de build adicional.
+- Dependências: Nenhuma
+- Arquivos prováveis: `src/assets/weather/*.webp`, `src/assets/weather/*.png`
+- Tipo: UI
+- Rastreabilidade: RF3, RF4 e seção "Imagens e ícones meteorológicos" do plano.
+
+### T-30 — Mapear WMO para visual meteorológico
+- ID: T-30
+- Título: Implementar `getWeatherVisual`
+- Descrição curta: Criar função pura que converte um código WMO em origem e texto alternativo do asset meteorológico correspondente.
+- Critérios de aceite:
+  - Todos os grupos WMO definidos no plano retornam o asset local correto.
+  - Código ausente ou desconhecido retorna o asset de indisponibilidade sem lançar erro.
+  - O retorno é tipado por `WeatherVisual` e não depende de React, DOM ou descrição textual da condição.
+- Dependências: T-04, T-29
+- Arquivos prováveis: `src/utils/weatherVisuals.ts`, `src/types/weather.ts`
+- Tipo: Data
+- Rastreabilidade: RF3, RF4 e contrato adicional de apresentação.
+
+### T-31 — Criar componente de visual meteorológico
+- ID: T-31
+- Título: Implementar `WeatherVisual`
+- Descrição curta: Encapsular a renderização de imagens meteorológicas com proporção estável e comportamento acessível.
+- Critérios de aceite:
+  - O componente recebe código WMO e tamanho de apresentação sem duplicar regras de mapeamento.
+  - A imagem declara dimensões estáveis ou usa contêiner com `aspect-ratio`, sem layout shift.
+  - Imagens decorativas usam `alt=""`; imagens que forem a única representação usam alternativa descritiva.
+  - O componente não realiza chamadas de rede nem altera o estado da aplicação.
+- Dependências: T-29, T-30
+- Arquivos prováveis: `src/components/WeatherVisual.tsx`
+- Tipo: UI
+- Rastreabilidade: RF3, RF4 e validação visual/acessível do plano.
+
+### T-32 — Aplicar hierarquia, cartões e separações visuais
+- ID: T-32
+- Título: Estilizar superfícies, previsão e estados da aplicação
+- Descrição curta: Aplicar o layout glassmorphism, divisores, cartões individuais e imagens meteorológicas aos componentes existentes.
+- Critérios de aceite:
+  - Busca, resultados, estados e previsão ocupam superfícies visualmente distintas, com bordas, espaçamento e foco visível.
+  - `WeatherPanel` mostra resumo atual com visual de destaque e uma grade de cinco cartões em `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`.
+  - Cada cartão diário apresenta data localizada, miniatura, condição e mínima/máxima rotuladas; indisponibilidades preservam posição e moldura.
+  - `SearchForm`, `LocationResults`, `StatusMessage` e `UnitToggle` seguem a hierarquia e os controles definidos no plano, sem quebrar seus contratos acessíveis existentes.
+  - O layout não cria rolagem horizontal em viewport `375x667` e não sobrepõe textos, controles ou imagens.
+- Dependências: T-11, T-12, T-13, T-14, T-15, T-16, T-31
+- Arquivos prováveis: `src/App.tsx`, `src/components/SearchForm.tsx`, `src/components/LocationResults.tsx`, `src/components/StatusMessage.tsx`, `src/components/UnitToggle.tsx`, `src/components/WeatherPanel.tsx`
+- Tipo: UI
+- Rastreabilidade: RF3, RF4, RF5, RF6, RF7 e RF8.
+
+## Entrega 8 — Testes focados
 
 ### T-17 — Testar utilitários de domínio
 - ID: T-17
@@ -450,7 +512,21 @@ Tamanho relativo: `P` é pequeno (até meio dia), `M` é médio (até dois dias)
 - Tipo: Test
 - Rastreabilidade: RF6, RF7, RF8, RF9 e RF10.
 
-## Entrega 8 — Hardening
+### T-33 — Testar apresentação visual meteorológica
+- ID: T-33
+- Título: Cobrir assets, acessibilidade visual e responsividade
+- Descrição curta: Criar testes unitários/componentes para o mapeamento visual e ampliar o E2E com screenshots dos estados principais.
+- Critérios de aceite:
+  - O teste unitário cobre cada grupo WMO e o fallback de `getWeatherVisual`.
+  - O teste de componente verifica a imagem, dimensões estáveis e texto alternativo apropriado para uso decorativo e informativo.
+  - O Playwright captura sucesso em mobile `375x667` e desktop, confirmando imagens renderizadas, cinco cartões legíveis, separações visíveis e ausência de rolagem horizontal.
+  - Screenshots dos estados loading, vazio e erro confirmam que a mensagem contextual não se sobrepõe ao restante da interface.
+- Dependências: T-24, T-25, T-30, T-31, T-32
+- Arquivos prováveis: `tests/unit/utils/weatherVisuals.test.ts`, `tests/unit/components/WeatherVisual.test.tsx`, `tests/e2e/weather-app.spec.ts`
+- Tipo: Test
+- Rastreabilidade: RF3, RF4, RF6, RF7 e RF8.
+
+## Entrega 9 — Hardening
 
 ### T-26 — Executar validação final
 - ID: T-26
@@ -461,7 +537,7 @@ Tamanho relativo: `P` é pequeno (até meio dia), `M` é médio (até dois dias)
   - `pnpm build` gera a aplicação com sucesso.
   - `pnpm test` passa na suíte configurada.
   - `pnpm test:e2e` passa na matriz E2E configurada.
-- Dependências: T-16, T-17, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-27, T-28
+- Dependências: T-16, T-17, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-27, T-28, T-29, T-30, T-31, T-32, T-33
 - Arquivos prováveis: `package.json`, `biome.json`
 - Tipo: Infra
 - Rastreabilidade: todos os requisitos funcionais RF1–RF10 e checklist de verificação do plano.
@@ -482,13 +558,16 @@ componentes.
 3. **Fatia 3 — Forecast atual e cinco dias:** T-04, T-05, T-08, T-10 e T-14, completando o fluxo de T-16.
   - Saída visível: após confirmar uma cidade, a tela mostra clima atual, cinco períodos e campos parciais como indisponíveis.
   - Pronto quando: retry, timeout, unidade Celsius/Fahrenheit e timezone da localidade funcionam no fluxo principal.
-4. **Fatia 4 — Confiança automatizada:** T-17, T-18, T-19, T-20, T-21, T-22, T-23, T-27 e T-28.
-  - Saída visível: nenhuma alteração funcional; regressões de domínio, services, hook e componentes passam a ser detectadas automaticamente.
-  - Pronto quando: os testes unitários e de componentes cobrem mocks de fetch, conversão de unidade e loading/erro/vazio.
+4. **Fatia 4 — Interface meteorológica:** T-29, T-30, T-31 e T-32.
+  - Saída visível: previsão organizada em cartões separados, com imagem local representando cada condição e estados visuais coerentes.
+  - Pronto quando: a grade mantém cinco previsões legíveis, os assets têm dimensões estáveis e a navegação por teclado continua clara em mobile e desktop.
 5. **Fatia 5 — Fluxos de navegador:** T-24 e T-25.
   - Saída visível: o caminho principal e a recuperação de falhas são validados em desktop e viewport mobile `375x667`.
   - Pronto quando: fixtures determinísticas cobrem busca, seleção, previsão, unidade, erro, vazio, retry e concorrência.
-6. **Fatia 6 — Hardening e release:** T-26.
+6. **Fatia 6 — Confiança automatizada:** T-17, T-18, T-19, T-20, T-21, T-22, T-23, T-27, T-28 e T-33.
+  - Saída visível: nenhuma alteração funcional; regressões de domínio, services, hook e componentes passam a ser detectadas automaticamente.
+  - Pronto quando: os testes unitários e de componentes cobrem mocks de fetch, conversão de unidade, mapeamento visual e loading/erro/vazio; screenshots validam a composição responsiva.
+7. **Fatia 7 — Hardening e release:** T-26.
   - Saída visível: build publicável com validação completa.
   - Pronto quando: `pnpm lint`, `pnpm build`, `pnpm test` e `pnpm test:e2e` passam.
 

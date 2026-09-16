@@ -379,6 +379,131 @@ Ambos os serviços usam `fetch` com `AbortController` e deadline de 8 segundos.
 HTTP `429` é `rate-limit`; `5xx`, falhas de rede e payloads incompatíveis são
 indisponibilidade/resposta inválida; o timeout tem mensagem própria.
 
+## Visual Design and Presentation
+
+A interface permanece mobile-first e adota o tema dark glassmorphism já
+configurado, mas deixa de tratar a previsão como texto corrido. A composição
+deve separar claramente busca, seleção de localidade, condição atual e previsão
+diária, permitindo reconhecer a informação principal sem percorrer a página.
+Esta decisão dá suporte direto a RF3 e RF4, preservando os estados previstos em
+RF6, RF7 e RF8.
+
+### Direção visual
+
+- **Fundo da aplicação:** `bg-night-900` com uma textura atmosférica discreta
+  criada por camadas CSS em tons de `night-800`, sem gradientes ou elementos
+  decorativos que reduzam o contraste. O conteúdo fica centralizado em uma
+  coluna de leitura de até `max-w-5xl`, com espaçamento vertical consistente.
+- **Superfícies:** busca, resultados, estados e previsão usam
+  `bg-white/5 backdrop-blur-md border border-white/10 shadow-glass`. Cartões
+  têm raio de no máximo `rounded-lg` e padding responsivo. Divisores
+  `border-white/10` separam cabeçalho, condição atual e a grade, evitando que
+  os quadros pareçam uma única área contínua.
+- **Hierarquia:** o nome da cidade e o contexto geográfico aparecem no
+  cabeçalho da previsão; a temperatura atual é o elemento de maior escala; a
+  condição e as mínimas/máximas são secundárias. A unidade usa controle
+  segmentado compacto ao lado do cabeçalho em desktop e abaixo dele em mobile.
+- **Cores semânticas:** texto primário branco, texto secundário em branco com
+  opacidade e `text-sun` reservado para temperaturas e condições ensolaradas.
+  Estados de foco mantêm `accent-400`; erro, vazio e carregamento recebem ícone
+  e cor semântica acessível, sem depender apenas da cor para comunicar o estado.
+
+### Imagens e ícones meteorológicos
+
+Cada condição recebe uma ilustração raster local, não uma imagem remota por
+dia. Isso garante carregamento previsível, evita dependência de terceiros e
+preserva a privacidade da consulta. Os assets ficam em
+`src/assets/weather/` e usam WebP com fallback PNG quando o ambiente de build
+ou compatibilidade exigir. A imagem representa a condição, e não uma cidade ou
+foto genérica de banco de imagens.
+
+O mapeamento é derivado exclusivamente do grupo WMO já definido no domínio:
+
+| Grupo WMO | Asset | Uso visual |
+| --- | --- | --- |
+| `0` | `clear.webp` | sol/céu aberto |
+| `1..3` | `partly-cloudy.webp` | nuvens parciais |
+| `45,48` | `fog.webp` | nevoeiro |
+| `51..57` | `drizzle.webp` | garoa |
+| `61..67` | `rain.webp` | chuva |
+| `71..77` | `snow.webp` | neve |
+| `80..82` | `showers.webp` | pancadas de chuva |
+| `85,86` | `snow-showers.webp` | pancadas de neve |
+| `95,96,99` | `storm.webp` | tempestade |
+| desconhecido/indisponível | `unavailable.webp` | condição indisponível |
+
+Uma função pura `getWeatherVisual(weatherCode?: number)` em
+`src/utils/weatherVisuals.ts` retorna `{ src, alt }`, usando `alt=""` quando a
+imagem apenas reforça a descrição textual e um `alt` descritivo quando for a
+única representação da condição. `WeatherVisual.tsx` encapsula a imagem e suas
+dimensões estáveis. O painel atual usa versão de destaque; cada cartão diário
+usa miniatura. A UI nunca infere um asset da descrição em texto nem inventa uma
+imagem para código WMO desconhecido.
+
+### Componentes e layout
+
+- **`App.tsx`:** organiza uma barra superior de busca e o conteúdo em seções
+  com margens e divisores. O resultado meteorológico somente é exibido em uma
+  área própria, distinta de resultados de geocoding e mensagens de estado.
+- **`SearchForm.tsx`:** vira uma superfície horizontal em telas `sm` ou maiores,
+  com campo flexível e botão de comando. Em mobile mantém o campo e o botão em
+  largura confortável, sem cortar texto ou reduzir a área de toque.
+- **`LocationResults.tsx`:** apresenta cada cidade como item clicável de lista,
+  com bordas entre itens e metadados de região/país em linha secundária. O item
+  selecionável ocupa toda a largura e possui hover, foco e estado pressionado.
+- **`StatusMessage.tsx`:** usa uma superfície contextual separada com ícone e
+  `role` atual. Loading inclui indicador visual não textual; erro deixa o retry
+  em destaque; vazio orienta a nova busca sem competir com a previsão antiga.
+- **`UnitToggle.tsx`:** é um controle segmentado com `aria-pressed`, aparência
+  ativa distinta e dimensões constantes para não deslocar o layout.
+- **`WeatherPanel.tsx`:** usa um cartão de resumo para localidade e condição
+  atual, com imagem de destaque, descrição e temperatura. A previsão fica em
+  seção posterior, separada por divisor e título, em
+  `grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3`. Cada dia é um cartão
+  individual com data localizada, miniatura, condição e bloco de mínima/máxima
+  claramente rotulado. Dias indisponíveis mantêm a posição e a moldura, exibem
+  `unavailable.webp` e o texto existente de indisponibilidade.
+
+As imagens devem declarar `width` e `height` ou usar um contêiner com
+`aspect-ratio` fixo para evitar layout shift. A grade reserva a mesma altura
+para todos os cartões; descrições longas quebram em linhas sem sobrepor as
+temperaturas. Em desktop, o resumo atual pode usar duas colunas internas; em
+mobile, imagem e texto ficam empilhados. Não serão inseridos cards dentro de
+cards: o resumo atual e cada dia são superfícies independentes.
+
+### Contratos adicionais de apresentação
+
+```ts
+export interface WeatherVisual {
+  src: string;
+  alt: string;
+}
+
+export function getWeatherVisual(weatherCode?: number): WeatherVisual;
+```
+
+`WeatherVisual` depende apenas de `weatherCode`, portanto pode ser testado sem
+React. Os componentes continuam recebendo `WeatherData` e `ForecastDay`; nenhum
+novo campo é adicionado ao contrato da API ou ao estado do hook. A formatação de
+data deve converter `YYYY-MM-DD` em rótulo pt-BR curto, usando o timezone da
+localidade e substituindo apenas o primeiro período por “Hoje” quando aplicável.
+
+### Validação visual e acessível
+
+Além da estratégia geral de testes, a entrega da estilização deve verificar:
+
+- cada grupo WMO e o fallback retornam o asset esperado;
+- imagens decorativas não duplicam a descrição para leitores de tela e imagens
+  informativas possuem texto alternativo adequado;
+- cartões de previsão, resultados e mensagens têm separação visível e foco de
+  teclado com contraste suficiente;
+- os cinco cartões mantêm leitura e ausência de rolagem horizontal em `375x667`;
+- em desktop, a grade apresenta cinco colunas e não amplia os cartões além do
+  conteúdo útil;
+- screenshots Playwright em mobile e desktop confirmam assets renderizados,
+  ausência de sobreposição e preservação da hierarquia em loading, erro, vazio
+  e sucesso.
+
 ## State Management
 
 O estado fica local ao fluxo principal, em `useWeatherApp`, sem Redux, contexto

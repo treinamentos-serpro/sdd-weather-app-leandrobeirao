@@ -100,16 +100,25 @@ export default function App() {
   }, [state, handleSubmit, submitForecast]);
 
   return (
-    <main className="min-h-screen bg-slate-950 p-4 text-white" aria-busy={isLoading}>
-      <div className="mx-auto max-w-4xl">
-        <SearchForm
-          value={query}
-          onChange={setQuery}
-          onSubmit={handleSubmit}
-          disabled={isLoading}
-        />
+    <main
+      className="min-h-screen bg-night-900 px-4 py-8 text-white sm:px-6 sm:py-12"
+      aria-busy={isLoading}
+    >
+      <div className="mx-auto max-w-5xl space-y-5">
+        <header className="space-y-5">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-sun">Previsão do tempo</p>
+            <h1 className="text-3xl font-semibold text-white sm:text-4xl">Seu clima, dia a dia</h1>
+          </div>
+          <SearchForm
+            value={query}
+            onChange={setQuery}
+            onSubmit={handleSubmit}
+            disabled={isLoading}
+          />
 
-        <UnitToggle unit={unit} onChange={toggleUnit} />
+          <UnitToggle unit={unit} onChange={toggleUnit} />
+        </header>
 
         {statusMessage && (
           <StatusMessage
