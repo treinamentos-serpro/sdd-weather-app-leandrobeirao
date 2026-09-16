@@ -38,4 +38,13 @@ describe('normalizeForecast', () => {
     expect(day.available).toBe(false);
     expect(day.missingFields).toContain('date');
   });
+
+  it('rejects an invalid timezone', () => {
+    expect(() =>
+      normalizeForecast(
+        { time: [], temperature_2m_min: [], temperature_2m_max: [], weather_code: [] },
+        'Not/ATimezone',
+      ),
+    ).toThrow('invalid-response');
+  });
 });

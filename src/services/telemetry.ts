@@ -12,6 +12,8 @@ export interface TelemetryEvent {
   requestId: string;
 }
 
+export type TelemetrySink = (event: TelemetryEvent) => void;
+
 let requestSequence = 0;
 
 export function createRequestId(): string {
@@ -19,6 +21,19 @@ export function createRequestId(): string {
   return `weather-${Date.now().toString(36)}-${requestSequence.toString(36)}`;
 }
 
-export function recordTelemetry(event: TelemetryEvent): void {
+const defaultTelemetrySink: TelemetrySink = (event) => {
   console.info('[weather-telemetry]', event);
+};
+let telemetrySink: TelemetrySink = defaultTelemetrySink;
+
+export function recordTelemetry(event: TelemetryEvent): void {
+  telemetrySink(event);
+}
+
+export function configureTelemetrySink(sink: TelemetrySink): void {
+  telemetrySink = sink;
+}
+
+export function resetTelemetrySink(): void {
+  telemetrySink = defaultTelemetrySink;
 }

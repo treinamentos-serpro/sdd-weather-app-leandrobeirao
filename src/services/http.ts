@@ -14,10 +14,20 @@ export function isTimeoutError(error: unknown): boolean {
 
 export async function fetchJson<T>(
   input: RequestInfo | URL,
-  init: RequestInit & { timeoutMs?: number; operation?: 'geocoding' | 'forecast' } = {},
+  init: RequestInit & {
+    timeoutMs?: number;
+    operation?: 'geocoding' | 'forecast';
+    requestId?: string;
+  } = {},
 ): Promise<T> {
-  const { timeoutMs = 8000, signal, operation = 'geocoding', ...rest } = init;
-  const requestId = createRequestId();
+  const {
+    timeoutMs = 8000,
+    signal,
+    operation = 'geocoding',
+    requestId: providedRequestId,
+    ...rest
+  } = init;
+  const requestId = providedRequestId ?? createRequestId();
   const controller = new AbortController();
 
   if (signal) {

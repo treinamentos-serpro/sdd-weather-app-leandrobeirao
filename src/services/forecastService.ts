@@ -11,7 +11,11 @@ const invalidResponseError = {
   retryable: true,
 } as const;
 
-export async function fetchForecast(city: City, signal?: AbortSignal): Promise<WeatherData> {
+export async function fetchForecast(
+  city: City,
+  signal?: AbortSignal,
+  requestId = createRequestId(),
+): Promise<WeatherData> {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
   url.searchParams.set('latitude', String(city.latitude));
   url.searchParams.set('longitude', String(city.longitude));
@@ -24,6 +28,7 @@ export async function fetchForecast(city: City, signal?: AbortSignal): Promise<W
     signal,
     timeoutMs: 8000,
     operation: 'forecast',
+    requestId,
   });
 
   if (
@@ -41,7 +46,7 @@ export async function fetchForecast(city: City, signal?: AbortSignal): Promise<W
       category: 'invalid-response',
       operation: 'forecast',
       timestamp: new Date().toISOString(),
-      requestId: createRequestId(),
+      requestId,
     });
     throw invalidResponseError;
   }
@@ -51,7 +56,7 @@ export async function fetchForecast(city: City, signal?: AbortSignal): Promise<W
       category: 'invalid-response',
       operation: 'forecast',
       timestamp: new Date().toISOString(),
-      requestId: createRequestId(),
+      requestId,
     });
     throw invalidResponseError;
   }

@@ -71,10 +71,23 @@ export function normalizeForecast(daily: ForecastApiLike, timezone: string): For
     });
   }
 
-  if (typeof timezone !== 'string' || timezone.length === 0) {
+  if (!isValidTimeZone(timezone)) {
     throw new Error('invalid-response');
   }
   return entries;
+}
+
+function isValidTimeZone(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0) {
+    return false;
+  }
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isIsoDate(value: unknown): value is string {

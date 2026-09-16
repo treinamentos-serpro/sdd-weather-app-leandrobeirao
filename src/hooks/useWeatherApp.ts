@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchForecast } from '../services/forecastService';
 import { searchLocations } from '../services/geocodingService';
+import { createRequestId } from '../services/telemetry';
 import type { AppError, City, Unit, WeatherData } from '../types/weather';
 import { validateCityQuery } from '../utils/validation';
 
@@ -26,6 +27,7 @@ export function useWeatherApp() {
   const [state, setState] = useState<WeatherAppState>({ kind: 'idle', query: '' });
   const operationRef = useRef(0);
   const controllerRef = useRef<AbortController | null>(null);
+  const correlationIdRef = useRef(createRequestId());
 
   const beginOperation = () => {
     controllerRef.current?.abort();
@@ -63,6 +65,7 @@ export function useWeatherApp() {
     }
 
     const { operationId, controller } = beginOperation();
+    correlationIdRef.current = createRequestId();
     setState({
       kind: 'loading',
       operation: 'search',
@@ -71,7 +74,11 @@ export function useWeatherApp() {
     });
 
     try {
-      const results = await searchLocations(validation.value, controller.signal);
+      const results = await searchLocations(
+        validation.value,
+        controller.signal,
+        correlationIdRef.current,
+      );
       if (!isCurrentOperation(operationId)) {
         return [];
       }
@@ -117,7 +124,7 @@ export function useWeatherApp() {
     });
 
     try {
-      const data = await fetchForecast(city, controller.signal);
+      const data = await fetchForecast(city, controller.signal, correlationIdRef.current);
       if (!isCurrentOperation(operationId)) {
         return null;
       }

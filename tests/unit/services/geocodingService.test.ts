@@ -48,4 +48,40 @@ describe('searchLocations', () => {
 
     await expect(searchLocations('Lisboa')).rejects.toMatchObject({ code: 'invalid-response' });
   });
+
+  it('rejects coordinates outside geographic bounds', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          results: [
+            { name: 'Cidade inválida', latitude: 91, longitude: -9, timezone: 'Europe/Lisbon' },
+          ],
+        }),
+      }),
+    );
+
+    await expect(searchLocations('Cidade inválida')).rejects.toMatchObject({
+      code: 'invalid-response',
+    });
+  });
+
+  it('rejects an invalid timezone', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          results: [
+            { name: 'Cidade inválida', latitude: 38, longitude: -9, timezone: 'Not/ATimezone' },
+          ],
+        }),
+      }),
+    );
+
+    await expect(searchLocations('Cidade inválida')).rejects.toMatchObject({
+      code: 'invalid-response',
+    });
+  });
 });
