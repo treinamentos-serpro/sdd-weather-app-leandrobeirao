@@ -12,6 +12,7 @@ describe('weather UI components', () => {
     const onSubmit = vi.fn();
     render(<SearchForm value="" onChange={vi.fn()} onSubmit={onSubmit} />);
 
+    expect(screen.getByRole('search', { name: 'Busca de cidade' })).toBeInTheDocument();
     const input = screen.getByLabelText('Cidade');
     fireEvent.change(input, { target: { value: 'Rio' } });
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
@@ -33,6 +34,12 @@ describe('weather UI components', () => {
     expect(screen.getByText('Não foi possível consultar o serviço.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it('announces the provided loading message', () => {
+    render(<StatusMessage kind="loading" message="Carregando clima..." />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Carregando clima...');
   });
 
   it('allows selecting a city from LocationResults', () => {
@@ -60,6 +67,9 @@ describe('weather UI components', () => {
 
     render(<LocationResults cities={cities} onSelect={onSelect} />);
 
+    expect(
+      screen.getByRole('button', { name: 'Rio de Janeiro, Rio de Janeiro, Brasil' }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Rio de Janeiro/i }));
     expect(onSelect).toHaveBeenCalledWith(cities[1]);
   });
@@ -135,6 +145,7 @@ describe('weather UI components', () => {
     const onChange = vi.fn();
     render(<UnitToggle unit="celsius" onChange={onChange} />);
 
+    expect(screen.getByRole('group', { name: 'Unidade de temperatura' })).toBeInTheDocument();
     const celsius = screen.getByRole('button', { name: 'Celsius' });
     const fahrenheit = screen.getByRole('button', { name: 'Fahrenheit' });
 

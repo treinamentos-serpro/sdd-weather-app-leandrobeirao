@@ -6,7 +6,6 @@ import { UnitToggle } from './components/UnitToggle';
 import { WeatherPanel } from './components/WeatherPanel';
 import { useWeatherApp } from './hooks/useWeatherApp';
 import { fetchForecast } from './services/forecastService';
-import { searchLocations } from './services/geocodingService';
 import type { City, WeatherData } from './types/weather';
 
 export default function App() {
@@ -28,9 +27,7 @@ export default function App() {
       return;
     }
 
-    void submitSearch(nextValue);
-
-    const results = await searchLocations(nextValue);
+    const results = await submitSearch(nextValue);
     setCities(results);
     setSelectedCity(null);
     setWeatherData(null);
@@ -95,6 +92,12 @@ export default function App() {
               }
             }}
           />
+        )}
+
+        {cities.length > 0 && !selectedCity && !weatherData && (
+          <div role="status" className="sr-only">
+            {cities.length === 1 ? 'Uma cidade encontrada' : `${cities.length} cidades encontradas`}
+          </div>
         )}
 
         {cities.length > 0 && !selectedCity && !weatherData && (

@@ -44,7 +44,7 @@ export function useWeatherApp() {
           query,
         },
       });
-      return;
+      return [];
     }
 
     setState({
@@ -58,13 +58,14 @@ export function useWeatherApp() {
       const results = await searchLocations(validation.value);
       if (results.length === 0) {
         setState({ kind: 'empty', query: validation.value });
-        return;
+        return results;
       }
 
       setState({
         kind: 'idle',
         query: validation.value,
       });
+      return results;
     } catch (error) {
       const appError = error as AppError;
       setState({
@@ -79,6 +80,7 @@ export function useWeatherApp() {
           query: validation.value,
         },
       });
+      return [];
     }
   };
 

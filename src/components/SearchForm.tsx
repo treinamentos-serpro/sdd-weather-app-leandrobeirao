@@ -26,7 +26,7 @@ export function SearchForm({ value, onChange, onSubmit, disabled = false }: Sear
   };
 
   return (
-    <form onSubmit={handleSubmit} aria-label="Busca de cidade">
+    <form onSubmit={handleSubmit} role="search" aria-label="Busca de cidade" className="space-y-2">
       <label htmlFor="city-search">Cidade</label>
       <input
         id="city-search"
@@ -34,9 +34,13 @@ export function SearchForm({ value, onChange, onSubmit, disabled = false }: Sear
         value={inputValue}
         onChange={handleChange}
         disabled={disabled}
-        aria-label="Cidade"
+        className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
       />
-      <button type="submit" disabled={disabled} aria-label="Buscar">
+      <button
+        type="submit"
+        disabled={disabled}
+        className="rounded bg-accent-600 px-4 py-2 text-white hover:bg-accent-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+      >
         Buscar
       </button>
     </form>
