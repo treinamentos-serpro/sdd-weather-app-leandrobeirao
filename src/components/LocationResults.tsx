@@ -7,7 +7,7 @@ interface LocationResultsProps {
 
 export function LocationResults({ cities, onSelect }: LocationResultsProps) {
   return (
-    <ul aria-label="Resultados da busca" role="list">
+    <ul aria-label="Resultados da busca">
       {cities.map((city) => (
         <li key={city.id ?? `${city.name}-${city.latitude}-${city.longitude}`}>
           <button type="button" onClick={() => onSelect(city)} aria-label={city.name}>
