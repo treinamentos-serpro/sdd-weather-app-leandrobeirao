@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { City } from '../types/weather';
 
 interface LocationResultsProps {
@@ -5,7 +6,7 @@ interface LocationResultsProps {
   onSelect: (city: City) => void;
 }
 
-export function LocationResults({ cities, onSelect }: LocationResultsProps) {
+function LocationResultsComponent({ cities, onSelect }: LocationResultsProps) {
   return (
     <ul aria-label="Resultados da busca">
       {cities.map((city) => (
@@ -25,3 +26,5 @@ export function LocationResults({ cities, onSelect }: LocationResultsProps) {
     </ul>
   );
 }
+
+export const LocationResults = memo(LocationResultsComponent);

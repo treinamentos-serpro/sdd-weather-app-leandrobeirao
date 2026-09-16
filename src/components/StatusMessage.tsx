@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface StatusMessageProps {
   kind: 'loading' | 'empty' | 'error';
   message: string;
@@ -5,9 +7,13 @@ interface StatusMessageProps {
   onRetry?: () => void;
 }
 
-export function StatusMessage({ kind, message, retryable = false, onRetry }: StatusMessageProps) {
+function StatusMessageComponent({ kind, message, retryable = false, onRetry }: StatusMessageProps) {
   if (kind === 'loading') {
-    return <div role="status">{message}</div>;
+    return (
+      <div role="status" aria-busy="true">
+        {message}
+      </div>
+    );
   }
 
   if (kind === 'empty') {
@@ -29,3 +35,5 @@ export function StatusMessage({ kind, message, retryable = false, onRetry }: Sta
     </div>
   );
 }
+
+export const StatusMessage = memo(StatusMessageComponent);

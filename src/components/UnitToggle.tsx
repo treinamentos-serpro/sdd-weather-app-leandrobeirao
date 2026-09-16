@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Unit } from '../types/weather';
 
 interface UnitToggleProps {
@@ -5,7 +6,7 @@ interface UnitToggleProps {
   onChange: (nextUnit: Unit) => void;
 }
 
-export function UnitToggle({ unit, onChange }: UnitToggleProps) {
+function UnitToggleComponent({ unit, onChange }: UnitToggleProps) {
   return (
     <fieldset className="mt-4 flex gap-2">
       <legend className="sr-only">Unidade de temperatura</legend>
@@ -28,3 +29,5 @@ export function UnitToggle({ unit, onChange }: UnitToggleProps) {
     </fieldset>
   );
 }
+
+export const UnitToggle = memo(UnitToggleComponent);

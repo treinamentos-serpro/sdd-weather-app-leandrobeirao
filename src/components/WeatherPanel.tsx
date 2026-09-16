@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import type { WeatherData } from '../types/weather';
 import { displayTemperature } from '../utils/temperature';
 
@@ -6,13 +7,19 @@ interface WeatherPanelProps {
   unit: 'celsius' | 'fahrenheit';
 }
 
-export function WeatherPanel({ data, unit }: WeatherPanelProps) {
+function WeatherPanelComponent({ data, unit }: WeatherPanelProps) {
+  const currentTemperature = useMemo(
+    () =>
+      `${displayTemperature(data.current.temperatureCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}`,
+    [data.current.temperatureCelsius, unit],
+  );
+
   return (
     <section aria-label="Clima atual e previsão">
       <div>
         <h2>{data.city.name}</h2>
         <p>{data.current.condition}</p>
-        <p>{`${displayTemperature(data.current.temperatureCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}`}</p>
+        <p>{currentTemperature}</p>
       </div>
 
       <ul>
@@ -36,3 +43,5 @@ export function WeatherPanel({ data, unit }: WeatherPanelProps) {
     </section>
   );
 }
+
+export const WeatherPanel = memo(WeatherPanelComponent);

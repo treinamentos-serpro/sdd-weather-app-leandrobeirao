@@ -39,7 +39,8 @@ export function SearchForm({ value, onChange, onSubmit, disabled = false }: Sear
       <button
         type="submit"
         disabled={disabled}
-        className="rounded bg-accent-600 px-4 py-2 text-white hover:bg-accent-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+        aria-busy={disabled}
+        className="rounded bg-accent-600 px-4 py-2 text-white hover:bg-accent-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-accent-600"
       >
         Buscar
       </button>
