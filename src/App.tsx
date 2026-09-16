@@ -5,16 +5,22 @@ import { StatusMessage } from './components/StatusMessage';
 import { UnitToggle } from './components/UnitToggle';
 import { WeatherPanel } from './components/WeatherPanel';
 import { useWeatherApp } from './hooks/useWeatherApp';
-import { fetchForecast } from './services/forecastService';
 import type { City, WeatherData } from './types/weather';
 
 export default function App() {
-  const { unit, toggleUnit, state, searchLocations: submitSearch } = useWeatherApp();
+  const {
+    unit,
+    toggleUnit,
+    state,
+    searchLocations: submitSearch,
+    fetchForecast: submitForecast,
+  } = useWeatherApp();
   const [query, setQuery] = useState('');
   const [cities, setCities] = useState<City[]>([]);
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+
+  const weatherData: WeatherData | null = state.kind === 'success' ? state.data : null;
+  const isLoadingForecast = state.kind === 'loading' && state.operation === 'forecast';
 
   const handleSubmit = async (value: string) => {
     const nextValue = value.trim();
@@ -22,7 +28,6 @@ export default function App() {
 
     if (!nextValue) {
       setCities([]);
-      setWeatherData(null);
       setSelectedCity(null);
       return;
     }
@@ -30,23 +35,14 @@ export default function App() {
     const results = await submitSearch(nextValue);
     setCities(results);
     setSelectedCity(null);
-    setWeatherData(null);
     if (results.length > 0) {
       setQuery(nextValue);
     }
   };
 
-  const handleSelectCity = async (city: City) => {
+  const handleSelectCity = (city: City) => {
     setSelectedCity(city);
-    setIsLoadingForecast(true);
-    setWeatherData(null);
-
-    try {
-      const data = await fetchForecast(city);
-      setWeatherData(data);
-    } finally {
-      setIsLoadingForecast(false);
-    }
+    void submitForecast(city);
   };
 
   const statusMessage = useMemo(() => {
@@ -88,7 +84,11 @@ export default function App() {
             retryable={statusMessage.retryable}
             onRetry={() => {
               if (state.kind === 'error' && state.retry?.kind === 'search') {
-                void submitSearch(state.retry.query);
+                void handleSubmit(state.retry.query);
+              }
+              if (state.kind === 'error' && state.retry?.kind === 'forecast') {
+                setSelectedCity(state.retry.city);
+                void submitForecast(state.retry.city);
               }
             }}
           />

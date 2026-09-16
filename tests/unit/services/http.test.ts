@@ -5,18 +5,37 @@ describe('fetchJson', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('returns json data on success', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ ok: true }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ok: true }),
+      }),
+    );
 
     await expect(fetchJson('/test')).resolves.toMatchObject({ ok: true });
   });
 
   it('classifies timeout errors', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.reject(new DOMException('aborted', 'AbortError'))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() => Promise.reject(new DOMException('aborted', 'AbortError'))),
+    );
 
-    await expect(fetchJson('/test', { timeoutMs: 1 })).rejects.toMatchObject({ code: 'timeout' });
+    await expect(fetchJson('/test', { timeoutMs: 1 })).rejects.toMatchObject({
+      code: 'timeout',
+      message: 'A consulta demorou mais que o esperado.',
+    });
+  });
+
+  it('classifies an offline network failure with a friendly retryable message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    await expect(fetchJson('/test')).rejects.toMatchObject({
+      code: 'service-unavailable',
+      message: 'Não foi possível consultar o serviço.',
+      retryable: true,
+    });
   });
 
   it('identifies timeout custom errors', () => {

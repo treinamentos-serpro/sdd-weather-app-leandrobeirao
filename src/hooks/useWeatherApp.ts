@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fetchForecast } from '../services/forecastService';
 import { searchLocations } from '../services/geocodingService';
 import type { AppError, City, Unit, WeatherData } from '../types/weather';
 import { validateCityQuery } from '../utils/validation';
@@ -84,10 +85,42 @@ export function useWeatherApp() {
     }
   };
 
+  const fetchForecastForCity = async (city: City) => {
+    setState({
+      kind: 'loading',
+      operation: 'forecast',
+      query: city.name,
+      operationId: Date.now(),
+      location: city,
+    });
+
+    try {
+      const data = await fetchForecast(city);
+      setState({ kind: 'success', data });
+      return data;
+    } catch (error) {
+      const appError = error as Partial<AppError>;
+      setState({
+        kind: 'error',
+        error: {
+          code: appError.code ?? 'service-unavailable',
+          message: appError.message ?? 'Não foi possível consultar o serviço.',
+          retryable: appError.retryable ?? true,
+        },
+        retry: {
+          kind: 'forecast',
+          city,
+        },
+      });
+      return null;
+    }
+  };
+
   return {
     state,
     unit,
     toggleUnit,
     searchLocations: searchLocationsForQuery,
+    fetchForecast: fetchForecastForCity,
   };
 }
