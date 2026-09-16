@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import type { WeatherData } from '../types/weather';
+import { formatForecastDate } from '../utils/date';
 import { displayTemperature } from '../utils/temperature';
 import WeatherVisual from './WeatherVisual';
 
@@ -47,7 +48,9 @@ function WeatherPanelComponent({ data, unit }: WeatherPanelProps) {
               className="flex min-h-60 flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-4 shadow-glass backdrop-blur-md"
             >
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">{day.date}</p>
+                <p className="text-sm font-medium capitalize text-white/70">
+                  {formatForecastDate(day.date)}
+                </p>
                 <WeatherVisual weatherCode={day.weatherCode} />
                 <p className="min-h-12 text-sm leading-5 text-white/80">
                   {day.condition ?? 'Condição indisponível'}
