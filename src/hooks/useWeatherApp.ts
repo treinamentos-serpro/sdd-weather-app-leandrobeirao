@@ -1,8 +1,7 @@
 import { useState } from 'react';
+import { searchLocations } from '../services/geocodingService';
 import type { AppError, City, Unit, WeatherData } from '../types/weather';
 import { validateCityQuery } from '../utils/validation';
-import { fetchForecast } from '../services/forecastService';
-import { searchLocations } from '../services/geocodingService';
 
 export type WeatherAppState =
   | { kind: 'idle'; query: string }

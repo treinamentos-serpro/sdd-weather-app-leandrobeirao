@@ -15,16 +15,20 @@ export function WeatherPanel({ data, unit }: WeatherPanelProps) {
         <p>{`${displayTemperature(data.current.temperatureCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}`}</p>
       </div>
 
-      <ul role="list">
+      <ul>
         {data.forecast.map((day) => (
           <li key={day.date}>
             <p>{day.date}</p>
             <p>{day.condition ?? 'Condição indisponível'}</p>
             <p>
-              {day.minimumCelsius !== undefined ? `${displayTemperature(day.minimumCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}` : 'N/D'}
+              {day.minimumCelsius !== undefined
+                ? `${displayTemperature(day.minimumCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}`
+                : 'N/D'}
             </p>
             <p>
-              {day.maximumCelsius !== undefined ? `${displayTemperature(day.maximumCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}` : 'N/D'}
+              {day.maximumCelsius !== undefined
+                ? `${displayTemperature(day.maximumCelsius, unit)}°${unit === 'celsius' ? 'C' : 'F'}`
+                : 'N/D'}
             </p>
           </li>
         ))}
